@@ -8,12 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Supabase CDN Client Engine -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- PDF Generation Engines -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <style>
         .premium-pattern {
             background-color: #020617;
             background-image: radial-gradient(circle at 50% -20%, #1e1b4b, transparent 60%);
         }
-        /* Custom scrollbar styling */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -22,14 +24,13 @@
 </head>
 <body class="premium-pattern text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8">
 
-    <!-- Toast Alerts Layout Container -->
     <div id="toast" class="fixed bottom-6 right-6 z-50 hidden flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-300">
         <div id="toast-dot" class="w-2 h-2 rounded-full"></div>
         <span id="toast-text" class="text-sm font-medium"></span>
     </div>
 
     <div class="max-w-7xl mx-auto space-y-8">
-        <!-- Header Branding Section -->
+        <!-- Header Section -->
         <header class="relative overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800 p-6 md:p-8 text-center md:text-left flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
             <div>
                 <span class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 rounded-full border border-indigo-500/20">
@@ -42,25 +43,24 @@
             </div>
             <div class="bg-slate-950/50 border border-slate-800 px-6 py-4 rounded-2xl backdrop-blur-sm flex gap-6 justify-around items-center">
                 <div class="text-center">
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Collection</p>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Filtered Collection</p>
                     <p id="stat-total" class="text-2xl font-bold text-emerald-400 mt-0.5">₹0</p>
                 </div>
                 <div class="w-px h-8 bg-slate-800"></div>
                 <div class="text-center">
-                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Headcount Logs</p>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Logged Entries</p>
                     <p id="stat-count" class="text-2xl font-bold text-indigo-400 mt-0.5">0</p>
                 </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Left Side Configuration & Controls Form -->
+            <!-- Left Panel Form -->
             <div class="lg:col-span-5 space-y-6">
-                
                 <!-- Configurations Config Card -->
                 <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm space-y-4">
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Event Profile Configurations
+                        <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Event Configuration Profile
                     </h2>
                     <p class="text-xs text-slate-400">Lock down scope properties to safely process incoming transactions rapidly.</p>
                     <div class="space-y-3">
@@ -79,7 +79,7 @@
                     </div>
                 </section>
 
-                <!-- Dynamic Processing Submission Entry Form -->
+                <!-- Processing Form -->
                 <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
                     <form id="entry-form" class="space-y-4">
                         <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-4">
@@ -89,7 +89,6 @@
                             <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Select Roll Number</label>
                             <select id="input-roll" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors text-sm" required>
                                 <option value="">-- Choose Student Roll No --</option>
-                                <!-- Populated dynamically by script engine -->
                             </select>
                         </div>
                         <div>
@@ -116,15 +115,15 @@
                 </section>
             </div>
 
-            <!-- Right Side Live Query Engine Logs Dashboard View -->
+            <!-- Right Panel Logs View -->
             <div class="lg:col-span-7">
                 <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl backdrop-blur-sm shadow-sm flex flex-col h-full max-h-[690px] overflow-hidden">
                     <div class="p-5 border-b border-slate-800/80 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-900/40">
                         <div class="relative w-full sm:max-w-xs">
-                            <input type="text" id="search-bar" placeholder="Search event, roll, or student name..." class="w-full pl-4 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition-all">
+                            <input type="text" id="search-bar" placeholder="Search current event or student..." class="w-full pl-4 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition-all">
                         </div>
-                        <button id="btn-export" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-700 hover:border-indigo-500 bg-slate-900 text-slate-300 hover:text-white transition-all text-xs font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
-                            📤 Export Filtered Data (.CSV)
+                        <button id="btn-export-pdf" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-indigo-500/30 hover:border-indigo-500 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-300 hover:text-white transition-all text-xs font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+                            📄 Export Current Event PDF
                         </button>
                     </div>
 
@@ -138,9 +137,7 @@
                                     <th class="p-4 text-xs font-bold tracking-wider text-slate-400 uppercase">Method</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-body" class="divide-y divide-slate-800/60">
-                                <!-- Populated dynamically by script engine -->
-                            </tbody>
+                            <tbody id="table-body" class="divide-y divide-slate-800/60"></tbody>
                         </table>
                     </div>
                 </section>
@@ -149,7 +146,7 @@
     </div>
 
     <script>
-        // Directly input your Supabase credentials here for static cloud compilation
+        // Directly input your Supabase credentials here
         const SUPABASE_URL = "https://khymdpjgceghzhktemxw.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_AMeJNSSCtMAvAvtcBlk0zg_Wn70qwnC";
         
@@ -182,12 +179,9 @@
 
         let localLogsMemoryState = [];
 
-        // Build Dropdown Menu items immediately on configuration compile load
         function initializeRollNoDropdown() {
             const dropdown = document.getElementById('input-roll');
-            // Sort keys numerically
             const sortedRolls = Object.keys(STUDENT_DIRECTORY).sort();
-            
             sortedRolls.forEach(roll => {
                 const opt = document.createElement('option');
                 opt.value = roll;
@@ -213,7 +207,6 @@
             setTimeout(() => el.classList.add('hidden'), 4000);
         }
 
-        // Live real-time connection logging
         async function fetchLiveDbLogs() {
             try {
                 let { data, error } = await supabaseClient
@@ -230,22 +223,24 @@
         }
 
         function renderFilteredLogs() {
-            const query = document.getElementById('search-bar').value.toLowerCase();
+            const currentConfigEvent = document.getElementById('cfg-event').value.trim().toLowerCase();
+            const searchQuery = document.getElementById('search-bar').value.toLowerCase();
             const body = document.getElementById('table-body');
             body.innerHTML = '';
 
-            let matches = localLogsMemoryState.filter(log => 
-                log.event_name.toLowerCase().includes(query) ||
-                log.student_name.toLowerCase().includes(query) ||
-                log.roll_no.includes(query)
-            );
+            // CRITICAL: Filter logs to ONLY show the current configured event
+            let matches = localLogsMemoryState.filter(log => {
+                const matchesEvent = currentConfigEvent ? log.event_name.toLowerCase() === currentConfigEvent : true;
+                const matchesSearch = log.student_name.toLowerCase().includes(searchQuery) || log.roll_no.includes(searchQuery);
+                return matchesEvent && matchesSearch;
+            });
 
             const sumVal = matches.reduce((sum, item) => sum + Number(item.amount), 0);
             document.getElementById('stat-total').innerText = '₹' + sumVal.toLocaleString('en-IN');
             document.getElementById('stat-count').innerText = matches.length;
 
             if(matches.length === 0) {
-                body.innerHTML = `<tr><td colspan="4" class="text-center py-24 text-sm text-slate-600 font-medium">No records located. Check search filters.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="4" class="text-center py-24 text-sm text-slate-600 font-medium">No records located for this specific event profile configuration.</td></tr>`;
                 return;
             }
 
@@ -268,23 +263,19 @@
             });
         }
 
-        // Automatic drop-down select index listener matching layout logic
+        // Refilter dashboard summary list view immediately as the config text fields change
+        document.getElementById('cfg-event').addEventListener('input', renderFilteredLogs);
+        document.getElementById('search-bar').addEventListener('input', renderFilteredLogs);
+
         document.getElementById('input-roll').addEventListener('change', (e) => {
             const roll = e.target.value;
-            const targetField = document.getElementById('input-name');
-            if(STUDENT_DIRECTORY[roll]) {
-                targetField.value = STUDENT_DIRECTORY[roll];
-            } else {
-                targetField.value = '';
-            }
+            document.getElementById('input-name').value = STUDENT_DIRECTORY[roll] || '';
         });
 
-        // Config state default bindings 
         document.getElementById('cfg-amount').addEventListener('input', (e) => {
             document.getElementById('input-amount').value = e.target.value;
         });
 
-        // Form submission database transaction routing logic
         document.getElementById('entry-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const cEvent = document.getElementById('cfg-event').value.trim();
@@ -293,7 +284,7 @@
             const amt = document.getElementById('input-amount').value;
 
             if(!cEvent || !cContr || !roll) {
-                showToast('Ensure Event Details and Roll Number are filled out.', 'error');
+                showToast('Ensure Event Configuration Details and Roll Number are filled out.', 'error');
                 return;
             }
 
@@ -321,38 +312,89 @@
                 await fetchLiveDbLogs();
             } catch (err) {
                 showToast('Cloud connection error. Failed to save entry.', 'error');
-            } finally {
+            } bits {
                 document.getElementById('btn-submit').innerText = "Secure Submit to Cloud";
                 document.getElementById('btn-submit').disabled = false;
             }
         });
 
-        document.getElementById('search-bar').addEventListener('input', renderFilteredLogs);
+        // Isolated Table PDF Generation Engine Module
+        document.getElementById('btn-export-pdf').addEventListener('click', () => {
+            const currentConfigEvent = document.getElementById('cfg-event').value.trim();
+            
+            if (!currentConfigEvent) {
+                showToast('Type an Event Name profile configuration to target report parameters.', 'error');
+                return;
+            }
 
-        // Fixed native CSV dataset rendering engine
-        document.getElementById('btn-export').addEventListener('click', () => {
-            const query = document.getElementById('search-bar').value.toLowerCase();
-            let matches = localLogsMemoryState.filter(log => 
-                log.event_name.toLowerCase().includes(query) ||
-                log.student_name.toLowerCase().includes(query) ||
-                log.roll_no.includes(query)
+            // Strictly filter array down to just this active operational event profile
+            let targetMatches = localLogsMemoryState.filter(log => 
+                log.event_name.toLowerCase() === currentConfigEvent.toLowerCase()
             );
 
-            if(matches.length === 0) return showToast('No data log matches found to extract.', 'error');
+            if(targetMatches.length === 0) {
+                showToast(`No database data logs found for event: "${currentConfigEvent}"`, 'error');
+                return;
+            }
 
-            const headers = ['Roll No', 'Name', 'Department', 'Event', 'Contribution Type', 'Amount (₹)', 'Payment Mode'];
-            const rows = matches.map(log => [log.roll_no, log.student_name, log.department, log.event_name, log.contribution_type, log.amount, log.payment_mode]);
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
             
-            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.map(v => `"${v}"`).join(","))].join("\n");
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", `Data_Science_Fund_Report.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Premium Header Typography Layout Branding
+            doc.setFillColor(15, 23, 42); 
+            doc.rect(0, 0, 220, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text("BISHOP HEBER COLLEGE (AUTONOMOUS)", 14, 18);
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(199, 210, 254);
+            doc.text(`Department of Data Science — Collection Statement Report`, 14, 26);
+            doc.text(`Target Event Scope Focus: ${currentConfigEvent.toUpperCase()}`, 14, 33);
+
+            // Compute summary metrics values
+            const totalAmountCollected = targetMatches.reduce((sum, item) => sum + Number(item.amount), 0);
+            
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Generated On: ${new Date().toLocaleDateString('en-IN')}`, 14, 48);
+            doc.text(`Total Headcount Logged: ${targetMatches.length} Students`, 14, 54);
+            doc.text(`Total Collection Amount Ledger Summary: INR ${totalAmountCollected.toLocaleString('en-IN')}/-`, 14, 60);
+
+            // Render beautifully padded data matrix rows layout mapping
+            const tableRows = targetMatches.map((log, index) => [
+                index + 1,
+                log.roll_no,
+                log.student_name,
+                log.contribution_type,
+                `Rs. ${Number(log.amount).toLocaleString('en-IN')}`,
+                log.payment_mode
+            ]);
+
+            doc.autoTable({
+                startY: 66,
+                head: [['S.No', 'Roll Number', 'Student Name', 'Contribution Item Context', 'Amount', 'Payment Mode']],
+                body: tableRows,
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 9, cellPadding: 3 },
+                columnStyles: {
+                    0: { cellWidth: 12 },
+                    1: { cellWidth: 25 },
+                    3: { cellWidth: 50 },
+                    4: { fontStyle: 'bold', textColor: [22, 163, 74] }
+                }
+            });
+
+            // Save compilation output file link array download action
+            doc.save(`Data_Science_Report_${currentConfigEvent.replace(/\s+/g, '_')}.pdf`);
+            showToast("Clean isolated PDF document downloaded successfully!");
         });
 
-        // Initialize script logic arrays on load
         initializeRollNoDropdown();
         fetchLiveDbLogs();
     </script>
