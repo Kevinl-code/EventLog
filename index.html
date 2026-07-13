@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Science Event Fund Manager</title>
+    <!-- Tailwind CSS CDN for Premium Modern Styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase Client CDN for Persistent Cloud Database Connectivity -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .premium-bg {
+            background-color: #020617;
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #020617 70%);
+        }
+        /* Custom scrollbar styling for the logs table */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body class="premium-bg text-slate-100 min-h-screen antialiased p-4 md:p-8">
+
+    <!-- Notification Toast System -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+        <div id="toast-dot" class="w-2 h-2 rounded-full"></div>
+        <span id="toast-text" class="text-sm font-medium"></span>
+    </div>
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header Branding Dashboard Banner -->
+        <header class="relative overflow-hidden rounded-3xl bg-slate-900/80 border border-slate-800 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
+            <div>
+                <span class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 rounded-full border border-indigo-500/20">
+                    Department Ledger System
+                </span>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mt-2 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                    Data Science Event Fund Manager
+                </h1>
+                <p class="text-slate-400 mt-1 text-sm md:text-base">Bishop Heber College (Autonomous)</p>
+            </div>
+            <div class="bg-slate-950/50 border border-slate-800 px-6 py-4 rounded-2xl backdrop-blur-sm flex gap-6 justify-around items-center">
+                <div class="text-center">
+                    <p class="text-xs font-medium text-slate-500 uppercase">Total Collection</p>
+                    <p id="total-amount-display" class="text-2xl font-bold text-emerald-400 mt-0.5">₹0</p>
+                </div>
+                <div class="w-px h-8 bg-slate-800"></div>
+                <div class="text-center">
+                    <p class="text-xs font-medium text-slate-500 uppercase">Headcount Logs</p>
+                    <p id="total-count-display" class="text-2xl font-bold text-indigo-400 mt-0.5">0</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Panel Workspace: Controls & Form Input -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Persistent Form Scope Control Configurations -->
+                <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm shadow-sm space-y-4">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span> Event Configurations
+                    </h2>
+                    <p class="text-xs text-slate-400">Lock down the specific event parameters below to streamline fast entry submissions.</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Custom Event Name</label>
+                            <input type="text" id="global-event" placeholder="e.g., CyberFest 2026, Freshers Day" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Custom Contribution Type</label>
+                            <input type="text" id="global-contribution" placeholder="e.g., Registration Fee, Refreshment Fund" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Default Base Amount (₹)</label>
+                            <input type="number" id="default-amount" placeholder="Set default collection cost" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transaction Input Form -->
+                <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm shadow-sm">
+                    <form id="ledger-form" class="space-y-4">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-4">
+                            <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span> Entry Form
+                        </h2>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Roll Number</label>
+                            <input type="text" id="roll-number" placeholder="Enter 9-digit Student Roll" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-mono tracking-wider placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors text-sm" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Student Name</label>
+                            <input type="text" id="student-name" placeholder="Auto-fills from Nominal Roll directory" readonly class="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-indigo-300 font-medium cursor-not-allowed text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Amount (₹)</label>
+                                <input type="number" id="transaction-amount" placeholder="₹ Amount" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 font-semibold focus:outline-none focus:border-indigo-500 transition-colors text-sm" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold tracking-wide text-slate-400 uppercase mb-1">Payment Mode</label>
+                                <select id="payment-mode" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 transition-colors text-sm">
+                                    <option value="Cash">💵 Cash</option>
+                                    <option value="Mobile Payment">📱 Mobile Payment</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" id="submit-btn" disabled class="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 font-bold tracking-wide text-white transition-all shadow-lg active:scale-[0.99] flex justify-center items-center gap-2 cursor-pointer text-sm">
+                            Secure Submit to Cloud
+                        </button>
+                        <p id="form-warning-msg" class="text-[11px] text-center text-rose-400">Specify configuration profile details above to enable logging submission controls.</p>
+                    </form>
+                </section>
+            </div>
+
+            <!-- Right Panel Workspace: Server Logs Data Management Table -->
+            <div class="lg:col-span-7">
+                <section class="bg-slate-900/60 border border-slate-800/80 rounded-2xl backdrop-blur-sm shadow-sm flex flex-col h-full max-h-[690px] overflow-hidden">
+                    <!-- Dynamic Log Filter Search Utilities Bar -->
+                    <div class="p-5 border-b border-slate-800/80 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-900/40">
+                        <div class="relative w-full sm:max-w-xs">
+                            <input type="text" id="table-search" placeholder="Search logs..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-xs transition-all">
+                            <span class="absolute left-3 top-2 text-slate-600 text-xs">🔍</span>
+                        </div>
+                        <button id="export-btn" class="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-700 hover:border-indigo-500 bg-slate-900 text-slate-300 hover:text-white transition-all text-xs font-bold tracking-wide flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                            📤 Export Data (.CSV)
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Table Content Window -->
+                    <div class="overflow-x-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                          <thead class="sticky top-0 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 z-10">
+                            <tr>
+                              <th class="p-4 text-xs font-bold tracking-wider text-slate-400 uppercase">Student Profile</th>
+                              <th class="p-4 text-xs font-bold tracking-wider text-slate-400 uppercase">Event Metric Context</th>
+                              <th class="p-4 text-xs font-bold tracking-wider text-slate-400 uppercase">Amount</th>
+                              <th class="p-4 text-xs font-bold tracking-wider text-slate-400 uppercase">Method</th>
+                            </tr>
+                          </thead>
+                          <tbody id="logs-table-body" class="divide-y divide-slate-800/60">
+                            <!-- Injected database templates mount here -->
+                          </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Controller Logic Script -->
+    <script>
+        // REPLACE THESE WITH YOUR COPIED INJECTION DETAILS IN YOUR DASHBOARD ENVIRONMENT CREDENTIALS
+        const SUPABASE_URL = "https://your-supabase-url.supabase.co"; 
+        const SUPABASE_KEY = "your-publishable-key";
+
+        // Initialize Native Client Instance global layer
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Core Nominal Student Reference Database Array
+        const STUDENT_DIRECTORY = {
+            "255229101": "ABDUL RASIK S", "255229102": "ABISHEIK RUBAN C", "255229103": "ABISREE M",
+            "255229104": "AFREEN M", "255229105": "AGSCE JEBAL B", "255229106": "AJAY RAAM E A",
+            "255229107": "AMALA BINISHA C", "255229108": "ARAVINTHAN G", "255229109": "ARUMUGAPERUMAL S",
+            "255229110": "BALAJI G", "255229111": "BALAMURUGAN P", "255229112": "BHUVANESHWARAN D",
+            "255229113": "CYRIL SYLVESTER D", "255229114": "DHARANI K", "255229115": "DIVYA SRI M",
+            "255229116": "DIWAKARAN A", "255229117": "EMEMA V", "255229118": "GAURI S",
+            "255229119": "JAGADESHWARAN K", "255229120": "JENCY G", "255229121": "JENIFER JENITHA A",
+            "255229122": "JERLIN G", "255229123": "JHONES J", "255229124": "JOEL A",
+            "255229125": "KABIL B", "255229126": "KEERTHAN G", "255229127": "KEVIN LAZARUS B",
+            "255229128": "KIRUTHIKA S", "255229129": "LAKSHITHAL", "255229130": "MAHALAKSHMI S",
+            "255229131": "MANOVISHNU A V", "255229132": "NALAN S", "255229133": "NANDHINI R",
+            "255229134": "NAVEENKUMAR C", "255229135": "NIDHEESH S", "255229136": "NIRMAL G",
+            "255229137": "PRASANTH M", "255229138": "PRAVIN V", "255229139": "PREM SELVAN R",
+            "255229140": "PRICILLA C", "255229141": "PRIYA THARSHINI R", "255229142": "RAJA VIGNESH P",
+            "255229143": "RAJAKUMAR AZARIAH S", "255229144": "RITHIKA M", "255229145": "SARAN B",
+            "255229146": "SARMILA BANU A", "255229147": "SELVAKUMAR K", "255229148": "SIVAGAMI A",
+            "255229149": "SIVAKUMAR E", "255229150": "SRIRAM M", "255229151": "STANLEY WILSON M",
+            "255229152": "SUSMITHA M", "255229153": "SWATHI S", "255229154": "THANUSIYA R",
+            "255229155": "THIRUMALAI RAJAN S", "255229156": "THIRUPUGAZH M", "255229157": "VIJAY V S",
+            "255229158": "YOGALAKSHMI K", "255229159": "JAYA VARSHINI I",
+            "255229161": "KEERTHANA SIRJA S", "255229162": "SHARAN KUMAR", "255229163": "LOKESH"
+        };
+
+        let rawServerLogs = [];
+
+        // DOM Element Selector Maps
+        const globalEventInput = document.getElementById('global-event');
+        const globalContributionInput = document.getElementById('global-contribution');
+        const defaultAmountInput = document.getElementById('default-amount');
+        const rollNumberInput = document.getElementById('roll-number');
+        const studentNameInput = document.getElementById('student-name');
+        const transactionAmountInput = document.getElementById('transaction-amount');
+        const paymentModeInput = document.getElementById('payment-mode');
+        const ledgerForm = document.getElementById('ledger-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const formWarningMsg = document.getElementById('form-warning-msg');
+        const logsTableBody = document.getElementById('logs-table-body');
+        const tableSearch = document.getElementById('table-search');
+        const exportBtn = document.getElementById('export-btn');
+        const totalAmountDisplay = document.getElementById('total-amount-display');
+        const totalCountDisplay = document.getElementById('total-count-display');
+
+        // Notification alert trigger pipeline
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const dot = document.getElementById('toast-dot');
+            const text = document.getElementById('toast-text');
+
+            text.textContent = message;
+            if(type === 'error') {
+                toast.className = "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-md shadow-2xl bg-rose-950/80 border-rose-500/50 text-rose-200 transition-all duration-300 transform translate-y-0 opacity-100";
+                dot.className = "w-2 h-2 rounded-full bg-rose-400";
+            } else {
+                toast.className = "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl border backdrop-blur-md shadow-2xl bg-emerald-950/80 border-emerald-500/50 text-emerald-200 transition-all duration-300 transform translate-y-0 opacity-100";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+            }
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 4000);
+        }
+
+        // Form Submission state monitoring configurations
+        function updateFormStateState() {
+            const isEventFilled = globalEventInput.value.trim() !== "" && globalContributionInput.value.trim() !== "";
+            if (isEventFilled) {
+                submitBtn.disabled = false;
+                formWarningMsg.classList.add('hidden');
+            } else {
+                submitBtn.disabled = true;
+                formWarningMsg.classList.remove('hidden');
+            }
+        }
+
+        [globalEventInput, globalContributionInput].forEach(el => el.addEventListener('input', updateFormStateState));
+
+        // Sync transactional defaults dynamically
+        defaultAmountInput.addEventListener('input', () => {
+            transactionAmountInput.value = defaultAmountInput.value;
+        });
+
+        // Real-time local matching directory lookups
+        rollNumberInput.addEventListener('input', () => {
+            const value = rollNumberInput.value.trim();
+            if (STUDENT_DIRECTORY[value]) {
+                studentNameInput.value = STUDENT_DIRECTORY[value];
+            } else {
+                studentNameInput.value = "";
+            }
+        });
+
+        // Cloud Database Pull Request Implementation
+        async function fetchEventLogs() {
+            try {
+                let { data, error } = await _supabase
+                    .from('event_contributions')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                rawServerLogs = data || [];
+                renderLogsTable();
+            } catch (err) {
+                showToast('Failed to sync changes from Database server.', 'error');
+            }
+        }
+
+        // Processing & Rendering Data Layers
+        function renderLogsTable() {
+            const search = tableSearch.value.toLowerCase();
+            const filtered = rawServerLogs.filter(log => 
+                log.event_name.toLowerCase().includes(search) ||
+                log.student_name.toLowerCase().includes(search) ||
+                log.roll_no.includes(search)
+            );
+
+            // Compute and animate calculations indices updates
+            const sumTotal = filtered.reduce((acc, current) => acc + Number(current.amount), 0);
+            totalAmountDisplay.textContent = `₹${sumTotal.toLocaleString('en-IN')}`;
+            totalCountDisplay.textContent = filtered.length;
+
+            logsTableBody.innerHTML = "";
+
+            if(filtered.length === 0) {
+                logsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-24 text-sm text-slate-600 font-medium">No records found matching query filter parameters.</td>
+                    </tr>`;
+                return;
+            }
+
+            filtered.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition-colors group border-b border-slate-800/40";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <p class="font-semibold text-white text-sm tracking-wide">${log.student_name}</p>
+                        <p class="text-xs font-mono text-indigo-400/80 mt-0.5">${log.roll_no} • <span class="text-slate-500">${log.department}</span></p>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2 py-0.5 text-[11px] font-semibold text-indigo-300 bg-indigo-500/10 rounded-md border border-indigo-500/20 max-w-max block truncate">${log.event_name}</span>
+                        <p class="text-xs text-slate-400 mt-1 truncate max-w-[180px]">${log.contribution_type}</p>
+                    </td>
+                    <td class="p-4 font-bold text-sm text-emerald-400">₹${Number(log.amount).toLocaleString('en-IN')}</td>
+                    <td class="p-4">
+                        <span class="inline-flex items-center text-[11px] font-medium ${log.payment_mode === 'Cash' ? 'text-amber-400' : 'text-cyan-400'}">
+                            ${log.payment_mode === 'Cash' ? '💵 Cash' : '📱 Mobile'}
+                        </span>
+                    </td>
+                `;
+                logsTableBody.appendChild(tr);
+            });
+        }
+
+        tableSearch.addEventListener('input', renderLogsTable);
+
+        // Process Cloud Write Event Form Submissions
+        ledgerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const roll = rollNumberInput.value.trim();
+            const name = studentNameInput.value.trim() || "Unknown Student";
+            const amt = parseFloat(transactionAmountInput.value);
+            const mode = paymentModeInput.value;
+            const event = globalEventInput.value.trim();
+            const type = globalContributionInput.value.trim();
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Logging Record...";
+
+            try {
+                const { error } = await _supabase.from('event_contributions').insert([{
+                    roll_no: roll,
+                    student_name: name,
+                    department: "Data Science",
+                    event_name: event,
+                    contribution_type: type,
+                    amount: amt,
+                    payment_mode: mode
+                }]);
+
+                if (error) throw error;
+
+                showToast(`Fund recorded for ${name}!`);
+                rollNumberInput.value = "";
+                studentNameInput.value = "";
+                transactionAmountInput.value = defaultAmountInput.value || "";
+                
+                await fetchEventLogs();
+            } catch (err) {
+                showToast('Error committing metrics variables database records.', 'error');
+            } finally {
+                submitBtn.textContent = "Secure Submit to Cloud";
+                updateFormStateState();
+            }
+        });
+
+        // Native CSV Data Export Execution
+        exportBtn.addEventListener('click', () => {
+            const search = tableSearch.value.toLowerCase();
+            const filtered = rawServerLogs.filter(log => 
+                log.event_name.toLowerCase().includes(search) ||
+                log.student_name.toLowerCase().includes(search) ||
+                log.roll_no.includes(search)
+            );
+
+            if(filtered.length === 0) return showToast('No data log matches found to extract.', 'error');
+
+            const headers = ['Roll No', 'Name', 'Department', 'Event', 'Contribution Type', 'Amount (₹)', 'Payment Mode', 'Timestamp'];
+            const rows = filtered.map(log => [
+                log.roll_no, log.student_name, log.department, log.event_name, log.contribution_type, log.amount, log.payment_mode, new Date(log.created_at).toLocaleString()
+            ]);
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Data_Science_Fund_Report_${globalEventInput.value || 'General'}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // Initialize App on mount load loops
+        fetchEventLogs();
+    </script>
+</body>
+</html>
